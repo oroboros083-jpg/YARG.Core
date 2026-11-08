@@ -21,6 +21,9 @@ namespace YARG.Core.Game
 
         public bool IsBot;
 
+        // A fruit fly is a bot that replays a fly-brain simulation's cached take instead of playing perfectly.
+        public bool IsFruitFly;
+
         public GameMode GameMode;
 
         public float NoteSpeed;

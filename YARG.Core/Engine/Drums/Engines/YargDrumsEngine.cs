@@ -194,8 +194,27 @@ namespace YARG.Core.Engine.Drums.Engines
             return note.Pad == PadHit || (PadHit != null && note.Pad == (int) FourLaneDrumPad.Wildcard);
     }
 
+        /// <summary>
+        /// When set on a bot engine, the bot replays this fruit fly's take instead of hitting the chart perfectly.
+        /// </summary>
+        public FlyTake? FlyTake { get; set; }
+
+        private int _flyStrikeIndex;
+
+        public override void Reset(bool keepCurrentButtons = false)
+        {
+            _flyStrikeIndex = 0;
+            base.Reset(keepCurrentButtons);
+        }
+
         protected override void UpdateBot(double time)
         {
+            if (IsBot && FlyTake is { } take)
+            {
+                ReplayFlyTake(take, time);
+                return;
+            }
+
             if (!IsBot || NoteIndex >= Notes.Count)
             {
                 return;
@@ -213,6 +232,21 @@ namespace YARG.Core.Engine.Drums.Engines
             {
                 Action = ConvertPadToAction(EngineParameters.Mode, chordNote.Pad);
                 PadHit = chordNote.Pad;
+                CheckForNoteHit();
+            }
+        }
+
+        // Each strike goes through the same hit check as a player's pad press, so the fly's misses and overhits count.
+        private void ReplayFlyTake(FlyTake take, double time)
+        {
+            while (_flyStrikeIndex < take.Strikes.Count && take.Strikes[_flyStrikeIndex].Time <= time)
+            {
+                int pad = FlyTake.ToChartPad(EngineParameters.Mode, take.Strikes[_flyStrikeIndex].Pad);
+                _flyStrikeIndex++;
+
+                Action = ConvertPadToAction(EngineParameters.Mode, pad);
+                PadHit = pad;
+                SubmitLaneNote(pad);
                 CheckForNoteHit();
             }
         }
